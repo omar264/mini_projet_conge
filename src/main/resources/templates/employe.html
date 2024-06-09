@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Tableau de bord des employés</title>
+    <link rel="stylesheet"
+          type="text/css"
+          href="../static/css/bootstrap.min.css"
+          th:href="@{/css/bootstrap.min.css}"/>
+    <style>
+        .logout-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        body {
+            background-color: #f8f9fa; /* Change la couleur de fond à un gris très clair */
+        }
+        /* Ajoute un thème vert en utilisant des classes prédéfinies de Bootstrap */
+        .alert-primary {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .btn-primary {
+            color: #fff;
+            background-color: #198754;
+            border-color: #198754;
+        }
+        .btn-primary:hover {
+            color: #fff;
+            background-color: #146c43;
+            border-color: #146c43;
+        }
+        .btn-primary:focus, .btn-primary.focus {
+            color: #fff;
+            background-color: #146c43;
+            border-color: #146c43;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.5);
+        }
+        .btn-primary.disabled, .btn-primary:disabled {
+            color: #fff;
+            background-color: #198754;
+            border-color: #198754;
+        }
+        .btn-primary:not(:disabled):not(.disabled):active, .btn-primary:not(:disabled):not(.disabled).active,
+        .show > .btn-primary.dropdown-toggle {
+            color: #fff;
+            background-color: #0d6e3a;
+            border-color: #0a5529;
+        }
+        .btn-primary:not(:disabled):not(.disabled):active:focus, .btn-primary:not(:disabled):not(.disabled).active:focus,
+        .show > .btn-primary.dropdown-toggle:focus {
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.5);
+        }
+        .btn-primary:not(:disabled):not(.disabled):active:hover, .btn-primary:not(:disabled):not(.disabled).active:hover,
+        .show > .btn-primary.dropdown-toggle:hover {
+            color: #fff;
+            background-color: #0d6e3a;
+            border-color: #0a5529;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:if="${alertMessage}" class="alert alert-primary">
+        <span th:text="${alertMessage}"></span>
+    </div>
+    <div class="text-center">
+        <h1>Tableau de bord des employés</h1>
+    </div>
+    <table class="table table-striped">
+        <tr>
+            <th>Nom</th>
+            <td th:text="${employee.nom}"></td>
+        </tr>
+        <tr>
+            <th>Prénom</th>
+            <td th:text="${employee.prenom}"></td>
+        </tr>
+        <tr>
+            <th>Code</th>
+            <td th:text="${employee.code}"></td>
+        </tr>
+        <tr>
+            <th>Date Embauchement</th>
+            <td th:text="${employee.dateEmbauchement}"></td>
+        </tr>
+        <tr>
+            <th>Congé Restant</th>
+            <td th:text="${employee.congeRestant}"></td>
+        </tr>
+    </table>
+    <button id="addCongeButton" onclick="window.location.href='/employe/AjoutConge'" class="btn btn-primary float-right"
+            th:disabled="${employee.congeRestant <= 0 or T(java.time.LocalDate).now().isBefore(employee.dateEmbauchement.plusYears(1))}">
+        Demande Congé
+    </button>
+    <div class="text-right logout-btn">
+        <a href="/admin/logout" class="btn btn-danger">Déconnexion</a>
+    </div>
+    <!-- Filter Form -->
+    <div class="my-4">
+        <form action="/employe/index" method="get" class="form-inline">
+            <label for="year" class="mr-2">Année :</label>
+            <input type="number" id="year" name="year" placeholder="Entrez l'année" th:value="${year}" min="2000"
+                   max="2024" class="form-control mr-2">
+            <label for="etat" class="mr-2">État :</label>
+            <select id="etat" name="etatRechercher" class="form-control mr-2">
+                <option value="">Sélectionner un état</option>
+                <option th:each="etat : ${T(spring.jpa.model.EtatConge).values()}" th:value="${etat}"
+                        th:text="${etat}" th:selected="${etatRechercher != null and etat.toString() == etatRechercher.toString()}">
+                </option>
+            </select>
+            <button type="submit" class="btn btn-primary">Rechercher</button>
+        </form>
+    </div>
+    <!-- Conge Table -->
+    <div class="mt-4">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Description</th>
+                <th>Date Début</th>
+                <th>Date Fin</th>
+                <th>Date Rupture</th>
+                <th>État</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="conge : ${conges.content}">
+                <td th:text="${conge.id}"></td>
+                <td th:text="${conge.description}"></td>
+                <td th:text="${conge.dateDebut}"></td>
+                <td th:text="${conge.dateFin}"></td>
+                <td th:text="${conge.dateRepture}"></td>
+                <td th:text="${conge.etat}"></td>
+                <td>
+                    <a class="btn btn-danger" th:if="${conge.etat.toString() == 'SOLLICITE'}" th:href="@{/employe/deleteConge(id=${conge.id})}"
+                       onclick="return confirm('Êtes-vous sûr de vouloir annuler ce congé?')">Annuler</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- Pagination -->
+    <div class="text-center">
+        <ul class="pagination">
+            <li class="page-item" th:each="i : ${#numbers.sequence(0, conges.totalPages - 1)}"
+                th:class="${i == pageCourant ? 'page-item active' : 'page-item'}">
+                <a class="page-link"
+                   th:href="@{'/employe/index?' + (${year} != null ? 'year=' + ${year} + '&amp;' : '') + (${etatRechercher} != null ? 'etatRechercher=' + ${etatRechercher} + '&amp;' : '') + 'page=' + ${i}}">
+                    <span th:text="${i + 1}"></span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        setTimeout(function () {
+            var alertDiv = document.querySelector('.alert');
+            if (alertDiv) {
+                alertDiv.style.display = 'none';
+            }
+        }, 5000); // Masquer l'alerte après 5 secondes
+        /*]]>*/
+    </script>
+</div>
+<script src="../static/js/bootstrap.bundle.min.js"
+        th:src="@{/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

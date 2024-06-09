@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<title>Partie Admin </title>
+	<link rel="stylesheet"
+		  type="text/css"
+		  href="../static/css/bootstrap.min.css"
+		  th:href="@{/css/bootstrap.min.css}"/>
+	<style>
+		.logout-btn {
+			position: absolute;
+			top: 10px;
+			right: 10px;
+		}
+		.dashboard-header {
+			margin-bottom: 20px;
+		}
+		body {
+			background-color: yellow;
+		}
+	</style>
+</head>
+<body>
+<div class="container">
+	<a href="/admin/logout" class="btn btn-danger logout-btn">Logout</a>
+
+	<h1 class="dashboard-header text-center">Partie Admin </h1>
+
+	<div class="card mb-4">
+		<div class="card-body">
+			<form action="#" th:action="@{/admin/index}" method="get" class="form-inline">
+				<div class="form-group mr-2">
+					<label for="employeeId" class="mr-sm-2">Employee:</label>
+					<select id="employeeId" name="employeeId" class="form-control mr-sm-2">
+						<option value="">Sélectionner un Employee</option>
+						<option th:each="employe : ${employes}" th:value="${employe.id}"
+								th:text="${employe.code}" th:selected="${employeeId != null and employe.id == employeeId}">
+						</option>
+					</select>
+				</div>
+				<div class="form-group mr-2">
+					<label for="year" class="mr-sm-2">Année:</label>
+					<input type="number" id="year" name="year" placeholder="Entrez l'année" th:value="${year}" min="2000"
+						   max="2024" class="form-control mr-sm-2">
+				</div>
+				<div class="form-group mr-2">
+					<label for="etat" class="mr-sm-2">État:</label>
+					<select id="etat" name="etatRechercher" class="form-control mr-sm-2">
+						<option value="">Sélectionner un état</option>
+						<option th:each="etat : ${T(spring.jpa.model.EtatConge).values()}" th:value="${etat}"
+								th:text="${etat}" th:selected="${etatRechercher != null and etat.toString() == etatRechercher.toString()}">
+						</option>
+					</select>
+				</div>
+				<button type="submit" class="btn btn-primary">Rechercher</button>
+			</form>
+		</div>
+	</div>
+
+	<div class="mt-4">
+		<table class="table table-striped">
+			<thead>
+			<tr>
+				<th>ID</th>
+				<th>Employee</th>
+				<th>Description</th>
+				<th>Date Début</th>
+				<th>Date Fin</th>
+				<th>Date Rupture</th>
+				<th>État</th>
+				<th>Action</th>
+			</tr>
+			</thead>
+			<tbody>
+			<tr th:each="conge : ${conges.content}">
+				<td th:text="${conge.id}"></td>
+				<td th:text="${conge.employe.code}"></td>
+				<td th:text="${conge.description}"></td>
+				<td th:text="${conge.dateDebut}"></td>
+				<td th:text="${conge.dateFin}"></td>
+				<td th:text="${conge.dateRepture}"></td>
+				<td th:text="${conge.etat}"></td>
+				<td>
+					<a th:if="${conge.etat.toString() == 'SOLLICITE'}"
+					   th:href="@{/admin/validateConge(id=${conge.id})}"
+					   class="btn btn-success"
+					   onclick="return confirm('Êtes-vous sûr de vouloir valider ce congé?')">Valider</a>
+					<a th:if="${conge.etat.toString() == 'SOLLICITE' || conge.etat.toString() == 'VALIDE'}"
+					   th:href="@{/admin/refuseConge(id=${conge.id})}"
+					   class="btn btn-danger"
+					   onclick="return confirm('Êtes-vous sûr de vouloir refuser ce congé?')">Refuser</a>
+					<a th:if="${conge.etat.toString() == 'VALIDE'}"
+					   th:href="@{/admin/annulerConge(id=${conge.id})}"
+					   class="btn btn-warning"
+					   onclick="return confirm('Êtes-vous sûr de vouloir annuler ce congé?')">Annuler</a>
+					<a th:if="${conge.etat.toString() == 'EN_COURS'}"
+					   th:href="@{/admin/stopConge(id=${conge.id})}"
+					   class="btn btn-danger"
+					   onclick="return confirm('Êtes-vous sûr de vouloir arrêter ce congé?')">Arrêter</a>
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="text-center">
+		<ul class="pagination">
+			<li class="page-item" th:each="i : ${#numbers.sequence(0, conges.totalPages - 1)}"
+				th:class="${i == pageCourant ? 'page-item active' : 'page-item'}">
+				<a class="page-link"
+				   th:href="@{'/admin/index?' + (${dateRechercher} != null ? 'dateRechercher=' + ${dateRechercher} + '&amp;' : '') + (${etatRechercher} != null ? 'etatRechercher=' + ${etatRechercher} + '&amp;' : '')  + (${nom} != null ? 'nom=' + ${nom} + '&amp;' : '') + 'page=' + ${i}}">
+					<span th:text="${i + 1}"></span>
+				</a>
+			</li>
+		</ul>
+	</div>
+</div>
+<script src="../static/js/bootstrap.bundle.min.js"
+		th:src="@{/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>
